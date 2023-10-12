@@ -11,12 +11,24 @@ from django.utils import timezone
 import json
 from ..serializers.login import LoginSerializer, ResetPasswordSerializer, VerifyResetPasswordOTPSerializer, ResetPasswordConfirmSerializer
 from ..utils import generate_otp, send_otp_via_email
+from drf_spectacular.utils import extend_schema
+
 
 CustomUser = get_user_model()
 
 
-class LoginAPIView(APIView):
 
+@extend_schema(
+    request=LoginSerializer,
+    methods=['POST'],
+    description='API endpoint to log in a user. '
+                'This endpoint allows a user to log in by providing their email and password. '
+                'If the provided credentials are valid, an access token and refresh token are returned.'
+)
+class LoginAPIView(APIView):
+    """
+    API endpoint to log in a user.
+    """
     def post(self, request):
         try:
             serializer = LoginSerializer(data=request.data)
@@ -55,9 +67,17 @@ class LoginAPIView(APIView):
             'message': 'Email or password is invalid.',
         })
 
-
+@extend_schema(
+    request=ResetPasswordSerializer,
+    methods=['POST'],
+       description='API endpoint to request a password reset for a user. '
+                'This endpoint triggers the generation and sending of an OTP to the user\'s email. '
+                'The OTP will be used to verify the user during the password reset process.'
+)
 class ResetPasswordAPIView(APIView):
-
+    """
+    API endpoint to request a password reset.
+    """
     def post(self, request, *args, **kwargs):
         serializer = ResetPasswordSerializer(data=request.data)
 
@@ -94,9 +114,18 @@ class ResetPasswordAPIView(APIView):
             'message': 'Internal Server Error.',
         })
 
-
+@extend_schema(
+    request=VerifyResetPasswordOTPSerializer,
+    methods=['POST'],
+    description='API endpoint to verify the reset password OTP. '
+                'This endpoint allows the verification of the OTP sent for resetting the user password. '
+                'The OTP must be provided in the request for verification. '
+                'If the OTP is valid and has not expired, the user credentials are considered verified.'
+)
 class VerifyResetPasswordOTPAPIView(APIView):
-
+    """
+    API endpoint to verify the reset password OTP.
+    """
     def post(self, request, *args, **kwargs):
         serializer = VerifyResetPasswordOTPSerializer(data=request.data)
         if serializer.is_valid():
@@ -157,9 +186,18 @@ class VerifyResetPasswordOTPAPIView(APIView):
             'message': 'Internal Server Error.',
         })
 
-
+@extend_schema(
+    request=ResetPasswordConfirmSerializer,
+    methods=['POST'],
+    description='API endpoint to confirm and reset the user password. '
+                'This endpoint allows the user to reset their password with a new one. '
+                'The new password must be provided in the request payload for resetting. '
+                'The email of the user whose password is being reset is retrieved from the session.'
+)
 class ResetPasswordConfirmAPIView(APIView):
-
+    """
+    API endpoint to confirm and reset the user password.
+    """
     def post(self, request, *args, **kwargs):
         serializer = ResetPasswordConfirmSerializer(data=request.data)
 

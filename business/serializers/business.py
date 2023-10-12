@@ -5,6 +5,9 @@ from django.core.exceptions import ValidationError
 from ..models import Business, Type
 
 class CreateBusinessSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating a new business. This serializer validates and saves business data.
+    """
     class Meta:
         model = Business
         exclude = ('id', 'slug', 'is_active', 'created_at', 'updated_at')
@@ -35,12 +38,26 @@ class CreateBusinessSerializer(serializers.ModelSerializer):
         return Business.objects.create(**validated_data)
     
     
+class BusinessSerializer(serializers.ModelSerializer):
+    """
+    Serializer for business.This serializers includes all the information information about a business.
+    """
+    class Meta:
+        model = Business
+        exclude = ('created_at', 'updated_at', 'is_active', )
+
 class ListBusinessSerializer(serializers.ModelSerializer):
+    """
+    Serializer for listing businesses. This serializer includes basic information about a business.
+    """
     class Meta:
         model = Business
         exclude = ('created_at', 'updated_at', 'is_active', )
 
 class CreateBusinessBranchSerializer(serializers.ModelSerializer):
+    """
+    Serializer for creating a business branch. This serializer includes necessary fields for creating a branch.
+    """
     class Meta:
         model = Business
         exclude = ('id', 'slug', 'is_active', 'created_at', 'updated_at', 'has_branch', 'branch_num', )
@@ -72,6 +89,9 @@ class CreateBusinessBranchSerializer(serializers.ModelSerializer):
     
     
 class BusinessBranchesListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for listing branches of a business. This serializer includes necessary fields for branch details.
+    """
     class Meta:
         model = Business
         exclude = ('id', 'slug', 'is_active', 'created_at', 'updated_at', 'has_branch', 'branch_num', )

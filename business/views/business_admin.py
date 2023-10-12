@@ -4,6 +4,7 @@ from rest_framework import status
 from django.shortcuts import redirect, reverse
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import IsAuthenticated
 from ..permission import IsSuperUser, IsBusinessAdminUser
 from ..models import Business
@@ -12,8 +13,16 @@ from ..serializers.business import ListBusinessSerializer
 
 CustomUser = get_user_model()
 
-
+@extend_schema(
+    request=None,
+    responses={200: ListBusinessAdminSerializer(many=True)},
+    description='API endpoint to list business administrators. '
+                'The API requires the user to be authenticated as a superuser.'
+)
 class BusinessAdminListAPIView(APIView):
+    """
+    API endpoint to list business administrators.
+    """
     permission_classes = [IsAuthenticated, IsSuperUser]
 
     def get(self, request, format=None):
@@ -21,9 +30,20 @@ class BusinessAdminListAPIView(APIView):
         serializer = ListBusinessAdminSerializer(business_admin, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+@extend_schema(
+    request=None, 
+    responses={
+        200: ListBusinessBranchAdminSerializer(many=True),
+        404: 'Business not found or no branches available',
+        403: 'Access denied: User is not a business admin or no permission'
+    },
+    description='API endpoint to retrieve the administrators of branches for a specific business. '
+                'The API requires the user to be authenticated as a business admin.'
+)
 class BusinessBranchAdminAPIView(APIView):
-
+    """
+    API endpoint to list branch administrators for a specific business.
+    """
     permission_classes = [IsAuthenticated, IsBusinessAdminUser]
 
     def get(self, request, business_id, *args, **kwargs):

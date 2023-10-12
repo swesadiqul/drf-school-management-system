@@ -6,14 +6,26 @@ from django.core.exceptions import ObjectDoesNotExist
 import datetime
 import json
 from django.db.models import Q
+from drf_spectacular.utils import extend_schema
 from ..utils import send_otp_via_email, generate_otp
 from ..serializers.registration import SignupSerializer, VerifyOTPSerializer
 
+
 CustomUser = get_user_model()
 
-
+@extend_schema(
+    request=SignupSerializer,
+    methods=['POST'],
+    description='API endpoint to sign up a new user. '
+                'This endpoint allows a user to register with their email and password. '
+                'A verification code will be sent to the provided email address for account verification. '
+                'The user needs to input the verification code to complete the registration process. '
+                'The password must meet certain requirements defined by the system.'
+)
 class SignupAPIView(APIView):
-
+    """
+    API endpoint to sign up a new user.
+    """
     def post(self, request):
         # Get the user's data from the request
         serializer = SignupSerializer(data=request.data)
@@ -51,8 +63,19 @@ class SignupAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    request=VerifyOTPSerializer,
+    methods=['POST'],
+    description='API endpoint to verify a user\'s sign-up using an OTP (One-Time Password). '
+                'The user must provide their email and the OTP sent to their email during the sign-up process. '
+                'If the OTP is valid and matches the one sent during sign-up, '
+                'the user account will be verified and created. '
+                'If the OTP is invalid or has expired, an error will be returned.'
+)
 class VerifySingupOTPView(APIView):
-
+    """
+    API endpoint to verify a user's sign-up using an OTP.
+    """
     def post(self, request):
         serializer = VerifyOTPSerializer(data=request.data)
         if serializer.is_valid():

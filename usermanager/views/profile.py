@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate, login, logout
 from ..serializers.profile import ChangePasswordSerializer
-
+from drf_spectacular.utils import extend_schema
 
 CustomUser = get_user_model()
 
@@ -20,8 +20,18 @@ class LogoutAPIView(APIView):
             'message': 'User successfully logout',
         })
 
-
+@extend_schema(
+    request=ChangePasswordSerializer,
+    methods=['POST'],
+    description='API endpoint to change the user password. '
+                'This endpoint allows an authenticated user to change their password. '
+                'The old password, along with the new password and confirmation, is required for this operation. '
+                'The new password must meet certain requirements defined by the system.'
+)
 class ChangePasswordAPIView(APIView):
+    """
+    API endpoint to change the user password.
+    """
     permission_classes = [IsAuthenticated]
     # authentication_classes = [JWTAuthentication]
 

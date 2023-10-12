@@ -3,11 +3,22 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
+from drf_spectacular.utils import extend_schema
 from ..permission import IsSuperUser
 from ..models import Business, Type, UniversalEntities
 from ..serializers.universal_entity import TypeSerializer, UniversalEntitiesSerializer
 
+
+@extend_schema(
+    request=TypeSerializer,
+    responses={200: TypeSerializer(many=True)},
+    description='API endpoint to list and create types associated with a specific business. '
+                'The API requires the user to be authenticated as a superuser.'
+)
 class TypeListCreateAPIView(APIView):
+    """
+    API endpoint to list and create types associated with a specific business.
+    """
     permission_classes = [IsAuthenticated, IsSuperUser]
 
     def get(self, request, business_id, *args, **kwargs):
@@ -33,8 +44,22 @@ class TypeListCreateAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+@extend_schema(
+    request=None,
+    responses={
+        200: TypeSerializer,
+        400: 'Error: Bad Request',
+        403: 'Error: Forbidden',
+        404: 'Error: Not Found',
+        204: 'No Content'
+    },
+    description='API endpoint to retrieve, update, or delete a specific type associated with a business. '
+                'The API requires the user to be authenticated as a superuser.'
+)
 class TypeDetailAPIView(APIView):
+    """
+    API endpoint to retrieve, update, or delete a specific type associated with a business.
+    """
     permission_classes = [IsAuthenticated, IsSuperUser]
 
     def get_object(self, business_id, type_id):
@@ -72,9 +97,20 @@ class TypeDetailAPIView(APIView):
         type_instance.delete()
         return Response({'message': 'Type deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
     
-    
+@extend_schema(
+    request=None,
+    responses={
+        200: UniversalEntitiesSerializer(many=True),
+        201: UniversalEntitiesSerializer,
+        400: 'Error: Bad Request'
+    },
+    description='API endpoint to retrieve a list of universal entities or create a new universal entity. '
+                'The API requires the user to be authenticated as a superuser.'
+)
 class UniversalEntitiesListCreateAPIView(APIView):
-    
+    """
+    API endpoint to retrieve a list of universal entities or create a new universal entity.
+    """
     permission_classes = [IsAuthenticated, IsSuperUser]
     
     def get(self, request, *args, **kwargs):
@@ -90,9 +126,20 @@ class UniversalEntitiesListCreateAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-
+@extend_schema(
+    request=None,
+    responses={
+        200: UniversalEntitiesSerializer,
+        204: 'No Content',
+        400: 'Error: Bad Request'
+    },
+    description='API endpoint to retrieve, update, or delete a specific universal entity. '
+                'The API requires the user to be authenticated as a superuser.'
+)
 class UniversalEntitiesDetailAPIView(APIView):
-    
+    """
+    API endpoint to retrieve, update, or delete a specific universal entity.
+    """
     permission_classes = [IsAuthenticated, IsSuperUser]
     
     def get(self, request, universal_id, *args, **kwargs):
