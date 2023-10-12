@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
 from ..permission import IsSuperUser, IsBusinessAdminUser, IsBranchPermission
 from ..models import Business, Type, UniversalEntities
+from ..serializers.business import CreateBusinessSerializer
 from ..serializers.business import CreateBusinessSerializer, ListBusinessSerializer, CreateBusinessBranchSerializer, BusinessBranchesListSerializer, BusinessSerializer
 
 
@@ -25,7 +26,7 @@ class CreateBusinessAPIView(APIView):
     """
     API endpoint to create a new business.
     """
-    permission_classes = [IsAuthenticated, IsSuperUser]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         serializer = CreateBusinessSerializer(data=request.data)

@@ -1,5 +1,6 @@
 from django.urls import path
 from .views.business import CreateBusinessAPIView, BusinessListAPIView, CreateBusinessBranchAPIView, BusinessBranchesListView
+                             
 from .views.business_admin import BusinessAdminListAPIView, BusinessBranchAdminAPIView
 from .views.unisersal_entity import TypeListCreateAPIView, TypeDetailAPIView, UniversalEntitiesListCreateAPIView, UniversalEntitiesDetailAPIView    
 

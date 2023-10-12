@@ -143,3 +143,5 @@ class VerifySingupOTPView(APIView):
                     return Response({'message': 'Wrong OTP'}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({'message': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+            
