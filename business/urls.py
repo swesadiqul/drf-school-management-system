@@ -2,7 +2,7 @@ from django.urls import path
 from .views.business import CreateBusinessAPIView, BusinessListAPIView, CreateBusinessBranchAPIView, BusinessBranchesListView
                              
 from .views.business_admin import BusinessAdminListAPIView, BusinessBranchAdminAPIView
-from .views.unisersal_entity import TypeListCreateAPIView, TypeDetailAPIView, UniversalEntitiesListCreateAPIView, UniversalEntitiesDetailAPIView    
+# from .views.unisersal_entity import TypeListCreateAPIView, TypeDetailAPIView, UniversalEntitiesListCreateAPIView, UniversalEntitiesDetailAPIView    
 
 app_name = 'business'
 
@@ -17,10 +17,10 @@ urlpatterns = [
     
     # Universal Entities
     
-    path('<int:business_id>/types/', TypeListCreateAPIView.as_view(), name='type_list_create'),
-    path('<int:business_id>/types/<int:type_id>/', TypeDetailAPIView.as_view(), name='type_detail'),
-    path('universal-entities/', UniversalEntitiesListCreateAPIView.as_view(), name='universal-entities-list-create'),
-    path('universal-entities/<int:universal_id>/', UniversalEntitiesDetailAPIView.as_view(), name='universal-entities-detail'),
+    # path('<int:business_id>/types/', TypeListCreateAPIView.as_view(), name='type_list_create'),
+    # path('<int:business_id>/types/<int:type_id>/', TypeDetailAPIView.as_view(), name='type_detail'),
+    # path('universal-entities/', UniversalEntitiesListCreateAPIView.as_view(), name='universal-entities-list-create'),
+    # path('universal-entities/<int:universal_id>/', UniversalEntitiesDetailAPIView.as_view(), name='universal-entities-detail'),
     
 ]
 

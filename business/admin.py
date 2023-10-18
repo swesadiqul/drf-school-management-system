@@ -6,13 +6,13 @@ from guardian.admin import GuardedModelAdmin
 admin.site.register(Business)
 
 
-class TypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'business')
+# class TypeAdmin(admin.ModelAdmin):
+#     list_display = ('name', 'business')
 
 
-class UniversalEntitiesAdmin(admin.ModelAdmin):
-    list_display = ('xname','xbusiness', 'xtype', )
+# class UniversalEntitiesAdmin(admin.ModelAdmin):
+#     list_display = ('xname','xbusiness', 'xtype', )
 
 
-admin.site.register(Type, TypeAdmin)
-admin.site.register(UniversalEntities, UniversalEntitiesAdmin)
+# admin.site.register(Type, TypeAdmin)
+# admin.site.register(UniversalEntities, UniversalEntitiesAdmin)

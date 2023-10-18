@@ -1,35 +1,116 @@
 from rest_framework import serializers
 from usermanager.models import CustomUser
-from ..models import Student, Parent
+from ..models.student import Student, StudentAdmission, Class, Section, PromoteStudents
+from ..models.parent import Parent
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    """
+    Serializer for CustomUser model.
+    """
     class Meta:
         model = CustomUser
-        fields = ['id', 'email', 'username', 'password', 'first_name', 'last_name', 'date_of_birth', 'profile_picture', 'is_active', 'date_joined']
+        fields = ['id', 'email', 'username', 'password', 'first_name', 'last_name',
+                  'date_of_birth', 'profile_picture', 'is_active', 'date_joined']
         extra_kwargs = {'password': {'write_only': True}}
 
 
+class SectionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Section model.
+    """
+    class Meta:
+        model = Section
+        fields = '__all__'
+
+
+class ClassSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Class model.
+    """
+    class Meta:
+        model = Class
+        fields = '__all__'
+
+
+class StudentAdmissionSerializer(serializers.ModelSerializer):
+    """
+    Serializer for StudentAdmission model.
+    """
+    class Meta:
+        model = StudentAdmission
+        fields = ['admission_id', 'first_name', 'last_name', 'date_of_birth', 'gender', 'nationality',
+                  'class_name', 'section_name', 'religion', 'address', 'city', 'state', 'country', 'email',
+                  'contact_number', 'previous_school', 'admission_status', 'guardian_name',
+                  'guardian_relationship', 'guardian_email', 'guardian_contact_number', 'admission_date']
+
+    def validate_email(self, value):
+        try:
+            validate_email(value)
+        except ValidationError:
+            raise serializers.ValidationError("Invalid email format")
+        return value
+
+    def validate_contact_number(self, value):
+        if len(value) != 11:
+            raise serializers.ValidationError(
+                "Contact number must be 11 digits")
+        if not value.isdigit():
+            raise serializers.ValidationError(
+                "Contact number must contain only digits")
+        return value
+
+    def validate_guardian_email(self, value):
+        try:
+            validate_email(value)
+        except ValidationError:
+            raise serializers.ValidationError("Invalid guardian email format")
+        return value
+
+    def validate_guardian_contact_number(self, value):
+        if len(value) != 11:
+            raise serializers.ValidationError(
+                "Guardian contact number must be 11 digits")
+        if not value.isdigit():
+            raise serializers.ValidationError(
+                "Guardian contact number must contain only digits")
+        return value
+
+
 class StudentSerializer(serializers.ModelSerializer):
-    user = CustomUserSerializer(write_only=True)
+    """
+    Serializer for Student model.
+    """
+    user = CustomUserSerializer()
+    current_class = ClassSerializer()
+    current_section = SectionSerializer()
+    admission_history = StudentAdmissionSerializer()
 
     class Meta:
         model = Student
-        fields = ['id', 'user', 'parent_email', 'gender', 'country', 'date_joined']
+        fields = "__all__"
 
-    def create(self, validated_data):
-        user_data = validated_data.pop('user')
+
+class PromoteStudentSerializer(serializers.Serializer):
+    """
+    Serializer for PromoteStudents model.
+    """
+    student_id = serializers.IntegerField()
+    to_class_id = serializers.IntegerField()
+    to_section_id = serializers.IntegerField()
+    remarks = serializers.CharField(required=False)
+
+class PromoteAllStudentsSerializer(serializers.Serializer):
+    """
+    Serializer for PromoteStudents model.
+    """
+    from_class_id = serializers.IntegerField()
+    to_class_id = serializers.IntegerField()
+    to_section_id = serializers.IntegerField()
+    remarks = serializers.CharField(required=False)
         
-        # Access the email and password from the nested dictionary
-        if user_data:
-            email = user_data.get('email', None)
-            password = user_data.get('password', None)
 
-        # Create a CustomUser instance
-        user = CustomUser.objects.create(email=email)
-        user.set_password(password)
-        user.save()
 
-        student = Student.objects.create(user=user, **validated_data)
-        return student
-    
-    
+

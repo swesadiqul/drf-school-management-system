@@ -33,7 +33,6 @@ class Business(models.Model):
     branch_num = models.PositiveIntegerField(default=0)
 
     ceo_name = models.CharField(max_length=100, blank=True, null=True)
-    is_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -57,32 +56,32 @@ class Business(models.Model):
         return self.name
 
 
-class Type(models.Model):
-    business = models.ForeignKey(Business, on_delete=models.CASCADE, null=True, blank=True)
-    name = models.CharField(max_length=50)
+# class Type(models.Model):
+#     business = models.ForeignKey(Business, on_delete=models.CASCADE, null=True, blank=True)
+#     name = models.CharField(max_length=50)
 
-    def __str__(self):
-        return self.name
+#     def __str__(self):
+#         return self.name
 
 
-class UniversalEntities(models.Model):
-    xbusiness = models.ForeignKey(Business, on_delete=models.CASCADE)
-    xtype = models.ForeignKey(Type, on_delete=models.CASCADE)
-    xname = models.CharField(max_length=100)
-    xdescription = models.TextField(blank=True)
-    xcode = models.CharField(max_length=20, blank=True)
-    xlatitude = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
-    xlongitude = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.BooleanField(default=True)
-    xcreated_at = models.DateTimeField(auto_now_add=True)
-    xupdated_at = models.DateTimeField(auto_now=True)                                      
+# class UniversalEntities(models.Model):
+#     xbusiness = models.ForeignKey(Business, on_delete=models.CASCADE)
+#     xtype = models.ForeignKey(Type, on_delete=models.CASCADE)
+#     xname = models.CharField(max_length=100)
+#     xdescription = models.TextField(blank=True)
+#     xcode = models.CharField(max_length=20, blank=True)
+#     xlatitude = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
+#     xlongitude = models.DecimalField(max_digits=10, decimal_places=6, null=True, blank=True)
+#     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+#     status = models.BooleanField(default=True)
+#     xcreated_at = models.DateTimeField(auto_now_add=True)
+#     xupdated_at = models.DateTimeField(auto_now=True)                                      
 
-    def __str__(self):
-        return self.xname
+#     def __str__(self):
+#         return self.xname
     
-    class Meta:
-        unique_together = ('xtype', 'xname')
+#     class Meta:
+#         unique_together = ('xtype', 'xname')
         
         
         

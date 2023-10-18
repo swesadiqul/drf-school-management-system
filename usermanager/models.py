@@ -1,9 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
-
 from django.db import models
-from django.utils.text import slugify
 
 
 class CustomUserManager(BaseUserManager):
@@ -68,9 +66,9 @@ class SuperAdmin(models.Model):
     is_business_admin = models.BooleanField(default=False)
     is_branch_admin = models.BooleanField(default=False)
 
-    is_staff = models.BooleanField(default=True)
-    is_active = models.BooleanField(default=True)
-    is_superuser = models.BooleanField(default=False)
+    # is_staff = models.BooleanField(default=True)
+    # is_active = models.BooleanField(default=True)
+    # is_superuser = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
     
     def __str__(self):

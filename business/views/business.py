@@ -6,8 +6,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
 from ..permission import IsSuperUser, IsBusinessAdminUser, IsBranchPermission
-from ..models import Business, Type, UniversalEntities
-from ..serializers.business import CreateBusinessSerializer
+from ..models import Business
 from ..serializers.business import CreateBusinessSerializer, ListBusinessSerializer, CreateBusinessBranchSerializer, BusinessBranchesListSerializer, BusinessSerializer
 
 
