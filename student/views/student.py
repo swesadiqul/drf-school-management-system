@@ -218,3 +218,5 @@ class PromoteStudentListCreateView(viewsets.ViewSet):
 
 
 
+
+

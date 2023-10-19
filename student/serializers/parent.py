@@ -12,3 +12,6 @@ class ParentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Parent
         fields = ['id', 'user', 'student', 'date_joined']
+        
+        
+        

@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from ..models.fees import FeesGroup, FeesType, FeesDiscount, FeesMaster
+from ..models.fees import FeesGroup, FeesType, FeesDiscount, FeesMaster, FeesCollect, Payment
+from ..serializers.student import StudentSerializer
+from ..models.student import Student
 
 class FeesGroupSerializer(serializers.ModelSerializer):
     """
@@ -35,3 +37,28 @@ class FeesMasterSerializer(serializers.ModelSerializer):
     class Meta:
         model = FeesMaster
         fields = '__all__'
+
+    
+
+class FeesTypeSearchSerializer(serializers.Serializer):
+    students = StudentSerializer(many=True)
+    
+
+class StudentSerializer(serializers.ModelSerializer):
+    class_name = serializers.ReadOnlyField(source='current_class.class_name')
+    student_name = serializers.ReadOnlyField(source='user.get_full_name')
+
+    class Meta:
+        model = Student
+        fields = ['id', 'class_name', 'student_name']
+        
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = '__all__'
+
+class FeesCollectSerializer(serializers.Serializer):
+    student_id = serializers.IntegerField()
+    payments = PaymentSerializer(many=True)
+    

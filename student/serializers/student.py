@@ -41,10 +41,7 @@ class StudentAdmissionSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = StudentAdmission
-        fields = ['admission_id', 'first_name', 'last_name', 'date_of_birth', 'gender', 'nationality',
-                  'class_name', 'section_name', 'religion', 'address', 'city', 'state', 'country', 'email',
-                  'contact_number', 'previous_school', 'admission_status', 'guardian_name',
-                  'guardian_relationship', 'guardian_email', 'guardian_contact_number', 'admission_date']
+        fields = "__all__"
 
     def validate_email(self, value):
         try:

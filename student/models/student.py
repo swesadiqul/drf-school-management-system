@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db.models import UniqueConstraint
+from ..models.fees import FeesMaster, Payment
 
 
 CustomUser = get_user_model()
@@ -63,6 +64,7 @@ class StudentAdmission(models.Model):
     contact_number = models.CharField(max_length=15)
     previous_school = models.CharField(max_length=150)
     admission_status = models.CharField(max_length=50)
+    fees_categories = models.ManyToManyField('FeesMaster', blank=True, related_name='admissions')
     guardian_name = models.CharField(max_length=150)
     guardian_relationship = models.CharField(max_length=50)
     guardian_email = models.EmailField(
@@ -82,37 +84,49 @@ class Student(models.Model):
         Class, on_delete=models.SET_NULL, null=True, blank=True)
     current_section = models.ForeignKey(
         Section, on_delete=models.SET_NULL, null=True, blank=True)
+    fees_payments = models.ManyToManyField('Payment', blank=True, related_name='studentpayment')
     is_disable = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.user.email
     
-    def save(self, *args, **kwargs):
-        # Check if is_disable is being set to True
-        if self.is_disable:
-            # Check if there's no existing DisableReason for this student
-            if not self.disable_reasons.exists():
-                # Create a DisableReason for this student
-                disable_reason = DisableReason.objects.create(
-                    disable_name="Default Disable Reason"
-                )
-                disable_reason.student.add(self)  # Associate this student
-                disable_reason.save()
-        else:
-            # Check if the student is associated with a DisableReason
-            try:
-                disable_reason = self.disable_reasons.get()
-                # If associated, remove the student from DisableReason
-                disable_reason.student.remove(self)
-                # If no more students are associated, delete the DisableReason
-                if disable_reason.student.count() == 0:
-                    disable_reason.delete()
-            except DisableReason.DoesNotExist:
-                # If no DisableReason is associated, do nothing
-                pass
+    @classmethod
+    def get_students_by_class_id(cls, class_id):
+        try:
+            selected_class = Class.objects.get(id=class_id)
+        except Class.DoesNotExist:
+            return None 
 
-        super().save(*args, **kwargs)
+        # Retrieve all students for the selected class
+        students = cls.objects.filter(current_class=selected_class)
+        return students
+    
+    # def save(self, *args, **kwargs):
+    #     # Check if is_disable is being set to True
+    #     if self.is_disable:
+    #         # Check if there's no existing DisableReason for this student
+    #         if not self.disable_reasons.exists():
+    #             # Create a DisableReason for this student
+    #             disable_reason = DisableReason.objects.create(
+    #                 disable_name="Default Disable Reason"
+    #             )
+    #             disable_reason.student.add(self)  # Associate this student
+    #             disable_reason.save()
+    #     else:
+    #         # Check if the student is associated with a DisableReason
+    #         try:
+    #             disable_reason = self.disable_reasons.get()
+    #             # If associated, remove the student from DisableReason
+    #             disable_reason.student.remove(self)
+    #             # If no more students are associated, delete the DisableReason
+    #             if disable_reason.student.count() == 0:
+    #                 disable_reason.delete()
+    #         except DisableReason.DoesNotExist:
+    #             # If no DisableReason is associated, do nothing
+    #             pass
+
+    #     super().save(*args, **kwargs)
 
 class StudentCategory(models.Model):
     category_name = models.CharField(max_length=50, unique=True)
