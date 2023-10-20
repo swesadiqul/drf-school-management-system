@@ -1,4 +1,4 @@
-
+from celery.schedules import crontab
 from datetime import timedelta
 from pathlib import Path
 import os
@@ -39,12 +39,15 @@ INSTALLED_APPS = [
     'guardian',
     # 'drf_yasg',
      'drf_spectacular',
+     "django_celery_results",
+     "django_celery_beat",
     
     
     # local apps
     'usermanager',
     'business',
     'student',
+    
 ]
 
 MIDDLEWARE = [
@@ -115,7 +118,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Dhaka'
 
 USE_I18N = True
 
@@ -179,5 +182,24 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'Collection of API endpoints for Master Board',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    # OTHER SETTINGS
 }
+
+
+# CELERY SETTINGS
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379'
+# CELERY_ACCEPT_CONTENT = ['application/json']
+# CELERY_RESULT_SERIALIZER = 'json'
+# CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_TIMEZONE = 'Asia/Dhaka'
+CELERY_BEAT_SCHEDULE = {
+    'apply-fines-every-3-minutes': {
+        'task': 'student.tasks.apply_fines',
+        'schedule': crontab(minute='*/2'),
+    },
+}
+
+# CELERY BEAT SCHEDULER
+
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'

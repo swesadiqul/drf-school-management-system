@@ -156,18 +156,10 @@ class FeesMasterListCreateView(viewsets.ViewSet):
         serializer = FeesMasterSerializer(data=request.data)
 
         if serializer.is_valid():
-            fees_master = serializer.save()
-
-            # Check if due_date has passed
+            # Calculate the due date (5 minutes from now in Asia/Dhaka timezone)
             current_time = timezone.now()
-            if fees_master.due_date < current_time:
-                if fees_master.fine_type == 'Fixed':
-                    fees_master.amount += fees_master.fine_amount
-                elif fees_master.fine_type == 'Percentage':
-                    fine_percentage = fees_master.fine_percentage / 100
-                    fees_master.amount += fees_master.amount * fine_percentage
-
-            fees_master.save()
+            due_date = current_time + timezone.timedelta(minutes=5)
+            serializer.save(due_date=due_date)
 
             return Response({"message": "Fees discount created successfully."}, status=status.HTTP_201_CREATED)
 
@@ -299,7 +291,7 @@ class FeesCollectViewSet(viewsets.ViewSet):
             amount_collected = payment_data.get('collect')['amount']
             payment_mode = payment_data.get('collect')['payment_mode']
             discount_group = payment_data.get('collect').get('discount', None)
-            
+
             try:
                 payment = payments.get(pay_id=pay_id)
             except Payment.DoesNotExist:
@@ -309,7 +301,7 @@ class FeesCollectViewSet(viewsets.ViewSet):
                 return Response({'error': f'Amount collected cannot be greater than the amount due.'}, status=status.HTTP_400_BAD_REQUEST)
             elif amount_collected == 0:
                 return Response({'error': f'Amount collected cannot be zero.'}, status=status.HTTP_400_BAD_REQUEST)
-            
+
              # Handle the discount based on the discount group
             if discount_group is not None:
                 try:
@@ -319,17 +311,18 @@ class FeesCollectViewSet(viewsets.ViewSet):
                         amount_collected += fees_discount.discount_amount
                     elif fees_discount.discount_type == 'Percentage':
                         # Apply a percentage discount
-                        percentage_discount = (fees_discount.discount_percentage / 100) * amount_collected
+                        percentage_discount = (
+                            fees_discount.discount_percentage / 100) * amount_collected
                         amount_collected += percentage_discount
                     else:
                         return Response({'error': 'Invalid discount type specified.'}, status=status.HTTP_400_BAD_REQUEST)
                 except FeesDiscount.DoesNotExist:
                     return Response({'error': f'Discount group {discount_group} not found.'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            print(amount_collected)  
+
+            print(amount_collected)
             if (payment.paid + amount_collected) > payment.amount:
-                return Response({'error': f'Amount collected cannot be greater than the amount due.'}, status=status.HTTP_400_BAD_REQUEST)  
-            
+                return Response({'error': f'Amount collected cannot be greater than the amount due.'}, status=status.HTTP_400_BAD_REQUEST)
+
             # Update payment details
             if amount_collected == payment.amount or (payment.amount == (payment.paid + amount_collected)):
                 payment.paid = payment.paid + amount_collected
