@@ -1,8 +1,7 @@
 from django.urls import path, include
-from .views.student import StudentListView, StudentAdmissionListCreateView, SectionListCreateView, ClassListCreateView, PromoteStudentListCreateView
+from .views.student import StudentListView, StudentAdmissionListCreateView, SectionListCreateView, ClassListCreateView, PromoteStudentListCreateView, StudentListClsSecViewSet
 from .views.parent import ParentListView
-from rest_framework.routers import DefaultRouter
-from .views.fees import FeesGroupListCreateView, FeesTypeListCreateView, FeesDiscountListCreateView, FeesMasterListCreateView, FeesTypeClassSearchView, FeesCollectViewSet
+from .views.fees import FeesGroupListCreateView, FeesTypeListCreateView, FeesDiscountListCreateView, FeesMasterListCreateView, FeesCollectViewSet, PaymentDetailsViewSet, FeesDueMessageSentViewSet
 
 app_name = 'student'
 
@@ -23,7 +22,8 @@ urlpatterns = [
     path('list-enabled-students/', StudentListView.as_view(
         {'get': 'list_enabled_students'}), name='list_enabled_students'),
 
-
+    path('get-all-students-cls-sec/', StudentListClsSecViewSet.as_view(
+    {'post': 'get_all_students_cls_sec'}), name='get_all_students_cls_sec'),
 
     path('parent-list/', ParentListView.as_view(), name='parent_list'),
 
@@ -54,11 +54,11 @@ urlpatterns = [
         {'post': 'create_fee_master'}), name='create_fee_master'),
     path('list-fees-master/', FeesMasterListCreateView.as_view(
         {'get': 'fees_master_list'}), name='fees_master_list'),
-
-    path('list-fees-search/', FeesTypeClassSearchView.as_view(
-        {'post': 'search_fees_students'}), name='search_fees_students'),
     
     path('collect-fees/<int:student_id>/', FeesCollectViewSet.as_view({'post': 'collect_fees'}), name='collect_fees'),
     
+    path('get-payment-details/', PaymentDetailsViewSet.as_view({'post': 'get_payment_details'}), name='get_payment_details'),
+    
+    path('sent-fee-due-message/', FeesDueMessageSentViewSet.as_view({'post': 'fees_due_message_sent_students'}), name='fees_due_message_sent_students'),
    
 ]

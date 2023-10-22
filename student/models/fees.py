@@ -73,6 +73,7 @@ class FeesMaster(models.Model):
         max_digits=10, decimal_places=2, null=True, blank=True)
     fine_percentage = models.DecimalField(
         max_digits=5, decimal_places=2, null=True, blank=True)
+    fined = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.fees_type} - {self.fees_group}"
@@ -126,14 +127,14 @@ class Payment(models.Model):
         ('Unpaid', 'Unpaid'),
     ]
 
-    fees_master = models.ForeignKey(FeesMaster, on_delete=models.CASCADE)
+    fees_master = models.ForeignKey(FeesMaster, on_delete=models.CASCADE, related_name="payments")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     balance = models.DecimalField(
         max_digits=10, decimal_places=2, blank=True, null=True, validators=[MinValueValidator(0)], default=0)
     payment_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"Payment ID: , Status: {self.status}"
+        return f"Payment ID: {self.payment_id}, Status: {self.status}"
 
 
 class FeesCollect(models.Model):
@@ -159,11 +160,11 @@ class FeesCollect(models.Model):
         return f"Amount: {self.amount}, Payment Mode: {self.payment_mode}, Payment ID: {self.payment_id}"
 
 
-class PaymentReminder(models.Model):
-    reminder_id = models.AutoField(primary_key=True)
-    # payment_id = models.ForeignKey(Payment, on_delete=models.CASCADE)
-    reminder_date = models.DateField()
-    reminder_message = models.TextField()
+# class PaymentReminder(models.Model):
+#     reminder_id = models.AutoField(primary_key=True)
+#     payment_id = models.ForeignKey(Payment, on_delete=models.CASCADE)
+#     reminder_date = models.DateField()
+#     reminder_message = models.TextField()
 
-    # def __str__(self):
-    #     return f"Reminder ID: {self.reminder_id}, Payment ID: {self.payment_id}, Reminder Date: {self.reminder_date}"
+#     def __str__(self):
+#         return f"Reminder ID: {self.reminder_id}, Payment ID: {self.payment_id}, Reminder Date: {self.reminder_date}"

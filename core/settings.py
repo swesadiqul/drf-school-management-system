@@ -195,7 +195,7 @@ CELERY_RESULT_BACKEND = 'django-db'
 CELERY_TIMEZONE = 'Asia/Dhaka'
 CELERY_BEAT_SCHEDULE = {
     'apply-fines-every-3-minutes': {
-        'task': 'student.tasks.apply_fines',
+        'task': 'student.tasks.apply_fines_once',
         'schedule': crontab(minute='*/2'),
     },
 }

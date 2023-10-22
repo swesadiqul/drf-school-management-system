@@ -1,17 +1,17 @@
 from rest_framework.response import Response
+import pytz
 from rest_framework.decorators import action
-from decimal import Decimal
+from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Sum
-from django.db.models import F
 from rest_framework import viewsets
 from rest_framework import status
 from django.utils import timezone
+from django.db.models import Prefetch
 from drf_spectacular.utils import extend_schema
-from ..serializers.fees import FeesGroupSerializer, FeesTypeSerializer, FeesDiscountSerializer, FeesMasterSerializer, FeesCollectSerializer
+from ..serializers.fees import FeesGroupSerializer, FeesTypeSerializer, FeesDiscountSerializer, FeesMasterSerializer, PaymentDetailsSerializer, FeesDueMessageSentSerializer
 from ..models.fees import FeesGroup, FeesType, FeesMaster, FeesDiscount, FeesCollect, Payment
-from ..models.student import Class, Student
-from ..serializers.fees import StudentSerializer
+from ..models.student import Student
+from ..tasks import send_email_to_student
 
 
 @extend_schema(
@@ -166,109 +166,73 @@ class FeesMasterListCreateView(viewsets.ViewSet):
         return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class FeesTypeClassSearchView(viewsets.ViewSet):
+class FeesDueMessageSentViewSet(viewsets.ViewSet):
+
+    permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['post'])
-    def search_fees_students(self, request):
-        fees_type_ids = request.data.get('fees_type_ids', [])
+    def fees_due_message_sent_students(self, request):
         class_id = request.data.get('class_id', None)
+        section_id = request.data.get('section_id', None)
+        last_date = request.data.get('last_date', None)
+        common_message = request.data.get('common_message', None)
 
-        if not fees_type_ids or not class_id:
-            return Response({'error': 'Please provide fees_type_ids and class_id.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not last_date:
+            return Response({"error": "Please specify 'last_date' parameter."}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            selected_class = Class.objects.get(id=class_id)
-        except Class.DoesNotExist:
-            return Response({'error': 'Class does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+        if class_id and section_id:
+            queryset = Student.objects.filter(
+                current_class=class_id, current_section=section_id)
+        elif class_id:
+            queryset = Student.objects.filter(current_class=class_id)
+        else:
+            return Response({"error": "Please specify 'class_id' parameter."}, status=status.HTTP_400_BAD_REQUEST)
 
-        students = Student.get_students_by_class_id(class_id)
+        payments = Payment.objects.filter(
+            fees_master__due_date__lt=last_date, status__in=['Unpaid', 'Partial'])
 
-        if students is None:
-            return Response({'error': 'No students found for the given class.'}, status=status.HTTP_400_BAD_REQUEST)
+        # Use Prefetch to optimize the query and fetch related payments
+        students = queryset.prefetch_related(
+            Prefetch('fees_payments', queryset=payments, to_attr='filtered_payments'))
 
-        # Prepare the response data
-        response_data = []
-
+        serialized_data = []
         for student in students:
-            student_info = {
-                'class_name': selected_class.class_name,
-                'student_email': student.user.email,
-                'fees_groups': []  # List of fees groups for this student
-            }
+            if not student.reminder_sent:
+                payments_data = []
+                for payment in student.filtered_payments:
+                    payments_data.append({
+                        "payment_id": payment.payment_id,
+                        "amount": payment.amount,
+                        "status": payment.status,
+                        "due_date": payment.fees_master.due_date
+                    })
 
-            total_amount = Decimal('0.00')
+                # Prepare the message for the student
+                if common_message:
+                    message = common_message  # Use the common message
+                else:
+                    # If you want a unique message for each student, modify this part accordingly
+                    message = f"Dear {student.user.get_full_name()}, you have dues to be paid."
 
-            for fees_type_id in fees_type_ids:
-                try:
-                    fees_master = FeesMaster.objects.get(id=fees_type_id)
-                except FeesMaster.DoesNotExist:
-                    response_data.append(
-                        {'fees_type_id': fees_type_id, 'error': 'FeesMaster does not exist'})
-                    continue
+                # Call the task asynchronously
+                send_email_to_student.apply_async(
+                    args=[student.user.email, "Dues Reminder", message])
 
-                # Fetch the student's fees_payments related to the fees_master
-                student_fees_payments = student.fees_payments.filter(
-                    id=fees_type_id)
+                # Update the reminder_sent field
+                student.reminder_sent = True
+                student.save()
 
-                if student_fees_payments:
-                    # Sum up the amounts for this fees_type_id for this student
-                    fees_group_str = f"{fees_master.fees_group.group_name} - {fees_master.fees_type.type_name} ({fees_master.fees_type.fee_code})"
-                    student_info['fees_groups'].append(fees_group_str)
-                    total_amount += student_fees_payments.aggregate(
-                        Sum('amount'))['amount__sum'] or Decimal('0.00')
+                student_data = {
+                    "class_name": student.current_class.class_name if student.current_class else None,
+                    "section_name": student.current_section.section_name if student.current_section else None,
+                    "student_name": student.user.get_full_name() if student.user else None,
+                    "student_email": student.user.email if student.user else None,
+                    "payments": payments_data,
+                    "message": message if message else None
+                }
+                serialized_data.append(student_data)
 
-            student_info['total_amount'] = str(total_amount)
-            response_data.append({'student_info': student_info})
-
-        return Response({'students': response_data}, status=status.HTTP_200_OK)
-
-# class FeesTypeClassSearchView(viewsets.ViewSet):
-
-    # @action(detail=False, methods=['get'])
-    # def search_fees_students(self, request):
-    #     fees_type_id = request.data['fees_type_id']
-    #     class_id = request.data['class_id']
-
-    #     if not fees_type_id or not class_id:
-    #         return Response({'error': 'Please provide fees_type_id and class_id.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    #     try:
-    #         fees_master = FeesMaster.objects.get(id=fees_type_id)
-    #     except FeesMaster.DoesNotExist:
-    #         return Response({'error': 'FeesMaster does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    #     try:
-    #         selected_class = Class.objects.get(id=class_id)
-    #     except Class.DoesNotExist:
-    #         return Response({'error': 'Class does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    #     students = Student.get_students_by_class_id(class_id)
-
-    #     if students is None:
-    #         return Response({'error': 'No students found for the given class.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    #     # Prepare the response data
-    #     response_data = []
-    #     for student in students:
-    #         student_info = {
-    #             'class_name': selected_class.class_name,
-    #             # 'student_name': student.user.get_full_name(),
-    #             'fees_group': fees_master.fees_group.group_name,
-    #             'amount': fees_master.amount
-    #         }
-
-    #         # Fetch the student's fees_payments related to the fees_master
-    #         student_fees_payments = student.fees_payments.filter(id=fees_type_id)
-
-    #         print(student_fees_payments)
-    #         if student_fees_payments:
-    #             student_info['fees_payments'] = list(student_fees_payments.values('due_date', 'amount'))
-    #         else:
-    #             student_info['fees_payments'] = []
-
-    #         response_data.append(student_info)
-
-    #     return Response({'students': response_data}, status=status.HTTP_200_OK)
+        return Response(serialized_data, status=status.HTTP_200_OK)
 
 
 class FeesCollectViewSet(viewsets.ViewSet):
@@ -336,18 +300,7 @@ class FeesCollectViewSet(viewsets.ViewSet):
             # Increment the paid amount and update the balance
             payment.save()
 
-            # Generate unique payment_id for each payment if it's blank
-            if not payment.payment_id:
-                existing_payment_ids = Payment.objects.filter(payment_id__startswith=f"{pay_id:03}").values_list(
-                    'payment_id', flat=True)
-                count = existing_payment_ids.count()
-
-                unique_payment_id = f"{pay_id:03}"
-                payment.payment_id = unique_payment_id
-                payment.save()
-
             # Create a FeesCollect record for this payment
-
             existing_records = FeesCollect.objects.filter(
                 payment_id__startswith=payment.payment_id)
             count = existing_records.count() + 1
@@ -360,3 +313,21 @@ class FeesCollectViewSet(viewsets.ViewSet):
             )
 
         return Response({'message': 'Fees collected successfully.'}, status=status.HTTP_200_OK)
+
+
+class PaymentDetailsViewSet(viewsets.ViewSet):
+
+    @action(detail=False, methods=['post'])
+    def get_payment_details(self, request):
+        payment_id = request.data.get('payment_id', None)
+
+        if payment_id:
+            try:
+                payment = FeesCollect.objects.get(payment_id=payment_id)
+            except FeesCollect.DoesNotExist:
+                return Response({"error": "Payment not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            serializer = PaymentDetailsSerializer(payment)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Please specify 'payment_id' parameter."}, status=status.HTTP_400_BAD_REQUEST)

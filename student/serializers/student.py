@@ -110,4 +110,28 @@ class PromoteAllStudentsSerializer(serializers.Serializer):
         
 
 
+class StudentListClsSecSerializer(serializers.ModelSerializer):
+    class_name = serializers.SerializerMethodField()
+    section_name = serializers.SerializerMethodField()
+    admission_id = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
 
+    class Meta:
+        model = Student
+        fields = ['class_name', 'section_name', 'admission_id', 'full_name', 'email']
+
+    def get_class_name(self, obj):
+        return obj.current_class.class_name if obj.current_class else None
+
+    def get_section_name(self, obj):
+        return obj.current_section.section_name if obj.current_section else None
+
+    def get_admission_id(self, obj):
+        return obj.admission_history.admission_id if obj.admission_history else None
+
+    def get_full_name(self, obj):
+        return obj.user.get_full_name() if obj.user else None
+
+    def get_email(self, obj):
+        return obj.user.email if obj.user else None

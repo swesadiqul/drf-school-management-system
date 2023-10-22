@@ -84,23 +84,24 @@ class Student(models.Model):
         Class, on_delete=models.SET_NULL, null=True, blank=True)
     current_section = models.ForeignKey(
         Section, on_delete=models.SET_NULL, null=True, blank=True)
-    fees_payments = models.ManyToManyField('Payment', blank=True, related_name='studentpayment')
+    fees_payments = models.ManyToManyField('Payment', blank=True, related_name='student_payments')
     is_disable = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+    reminder_sent = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.email
     
-    @classmethod
-    def get_students_by_class_id(cls, class_id):
-        try:
-            selected_class = Class.objects.get(id=class_id)
-        except Class.DoesNotExist:
-            return None 
-
-        # Retrieve all students for the selected class
-        students = cls.objects.filter(current_class=selected_class)
-        return students
+    @staticmethod
+    def get_payments_for_students(students):
+        if isinstance(students, models.QuerySet):
+            # If students is a queryset, return payments for all students in the queryset
+            return Payment.objects.filter(student__in=students)
+        elif isinstance(students, models.Model):
+            # If students is a single student object, return payments for that student
+            return students.fees_payments.all()
+        else:
+            raise ValueError("Invalid input. Expected a single student object or a queryset of student objects.")
     
     # def save(self, *args, **kwargs):
     #     # Check if is_disable is being set to True

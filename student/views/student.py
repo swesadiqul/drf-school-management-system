@@ -6,8 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets
 from drf_spectacular.utils import extend_schema
 from ..models.student import Student, StudentAdmission, Section, Class, PromoteStudents
-from ..serializers.student import StudentSerializer, StudentAdmissionSerializer, SectionSerializer, ClassSerializer, PromoteStudentSerializer, PromoteAllStudentsSerializer
-
+from ..serializers.student import StudentSerializer, StudentAdmissionSerializer, SectionSerializer, ClassSerializer, PromoteStudentSerializer, PromoteAllStudentsSerializer, StudentListClsSecSerializer
 
 
 @extend_schema(
@@ -105,7 +104,7 @@ class StudentListView(viewsets.ViewSet):
         students = Student.objects.all()
         serializer = StudentSerializer(students, many=True)
         return Response(serializer.data)
-    
+
     @action(detail=False, methods=['get'])
     def list_disabled_students(self, request):
         """
@@ -114,7 +113,7 @@ class StudentListView(viewsets.ViewSet):
         students = Student.objects.filter(is_disable=True)
         serializer = StudentSerializer(students, many=True)
         return Response(serializer.data)
-    
+
     @action(detail=False, methods=['get'])
     def list_enabled_students(self, request):
         """
@@ -129,8 +128,8 @@ class StudentListView(viewsets.ViewSet):
     request=PromoteStudentSerializer,
     methods=['POST'],
     description='API endpoint to promote a single student or all students in a class to the next desired    class. '
-            'The request should contain the student ID, target class ID, target section ID, and optional remarks.'
-            'The API requires the user to be authenticated.'
+    'The request should contain the student ID, target class ID, target section ID, and optional remarks.'
+    'The API requires the user to be authenticated.'
 )
 class PromoteStudentListCreateView(viewsets.ViewSet):
     """
@@ -163,7 +162,7 @@ class PromoteStudentListCreateView(viewsets.ViewSet):
                     to_section=to_section,
                     remarks=remarks
                 )
-                
+
                 promotion.save()
 
                 student.current_class = to_class
@@ -217,6 +216,21 @@ class PromoteStudentListCreateView(viewsets.ViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
-
+class StudentListClsSecViewSet(viewsets.ViewSet):
+    
+    permission_classes = [IsAuthenticated]
+    
+    @action(detail=False, methods=['post'])
+    def get_all_students_cls_sec(self, request):
+        class_id = request.data.get('class_id', None)
+        section_id = request.data.get('section_id', None)
+        print(f"Class ID:- {class_id} and Section ID:- {section_id}")
+        try:
+            if class_id and section_id:
+                queryset = Student.objects.filter(current_class=class_id, current_section=section_id)
+            else:
+                queryset = Student.objects.filter(current_class=class_id)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = StudentListClsSecSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
