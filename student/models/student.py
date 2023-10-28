@@ -2,10 +2,27 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db.models import UniqueConstraint
+from django.core.validators import RegexValidator
 from ..models.fees import FeesMaster, Payment
 
 
 CustomUser = get_user_model()
+
+
+class Session(models.Model):
+    session_name = models.CharField(
+        max_length=50,
+        unique=True,
+        validators=[
+            RegexValidator(
+                regex=r'^\d{4}-\d{2}$',
+                message='Session name must be in the format "YYYY-YY" (e.g., 2019-20).',
+            ),
+        ]
+    )
+
+    def __str__(self):
+        return self.session_name
 
 
 class Section(models.Model):
@@ -55,6 +72,8 @@ class StudentAdmission(models.Model):
         'Class', on_delete=models.SET_NULL, null=True, blank=True)
     section_name = models.ForeignKey(
         'Section', on_delete=models.SET_NULL, null=True, blank=True)
+    session_name = models.ForeignKey(
+    'Session', on_delete=models.SET_NULL, null=True, blank=True)
     religion = models.CharField(max_length=50)
     address = models.TextField()
     city = models.CharField(max_length=50)
@@ -84,6 +103,8 @@ class Student(models.Model):
         Class, on_delete=models.SET_NULL, null=True, blank=True)
     current_section = models.ForeignKey(
         Section, on_delete=models.SET_NULL, null=True, blank=True)
+    current_session = models.ForeignKey(
+    Session, on_delete=models.SET_NULL, null=True, blank=True)
     fees_payments = models.ManyToManyField('Payment', blank=True, related_name='student_payments')
     is_disable = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)

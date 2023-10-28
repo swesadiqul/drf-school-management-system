@@ -1,12 +1,11 @@
-from django.db import transaction
-from django.db.models.signals import post_save, pre_save, m2m_changed
+from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 from decimal import Decimal
 from django.contrib.auth import get_user_model
 from .models.student import StudentAdmission, Student
 from .models.parent import Parent
 from .models.fees import Payment
-from django.db import transaction
+from .models.exam import ExamGroup, Exam
 
 
 User = get_user_model()
@@ -92,3 +91,11 @@ def update_student_fees_categories(sender, instance, action, model, pk_set, **kw
         except Student.DoesNotExist:
             print("Student Doesn't Exist")
             pass
+        
+
+# Signal handler to update no_of_exam when exams are added or removed
+@receiver(m2m_changed, sender=ExamGroup.exam.through)
+def update_no_of_exam(sender, instance, action, reverse, model, pk_set, **kwargs):
+    if action == 'post_add' or action == 'post_remove':
+        instance.no_of_exam = instance.exam.count()
+        instance.save()
